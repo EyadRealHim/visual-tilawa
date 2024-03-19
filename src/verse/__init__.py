@@ -3,7 +3,7 @@ from typing import List, Set
 from pydub import AudioSegment, silence
 
 from .types import VerseInformation, ClipInformation, VerseWord, VerseKey
-from .utilities import GET, virtual_io
+from ..utilities import GET, virtual_io
 from .config import RECITER_ID, SILENCE_THRESHOLD, CODE_VERSION
 
 def verse_info(key: VerseKey):
