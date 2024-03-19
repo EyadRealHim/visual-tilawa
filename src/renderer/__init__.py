@@ -4,8 +4,8 @@ from pydantic import BaseModel
 from PIL import Image, ImageDraw
 
 
-from .utilities import FontCache, load_font, verse_word2terms, verse_words_load_fonts, terms2lines
-from ..verse import verse_info, VerseKey, ClipInformation
+from .utilities import load_font, verse_word2terms, verse_words_load_fonts, terms2lines
+from ..verse import verse_info, VerseKey
 from .types import TextRenderer
 from .config import OPEN_SANS
 
@@ -19,26 +19,23 @@ class Renderer(BaseModel):
     # FreeTypeFont
     english_font: Any
     # font_url, FreeTypeFont
-    fonts: Dict[str, Any]
+    font_cache: Dict[str, Any]
 
 
 
 if __name__ == "__main__":
     verse = verse_info(VerseKey(chapter_id=2, verse_id=255))
 
-    font_cache: FontCache = dict()
-    verse_words_load_fonts(verse.content, 35, font_cache)
-
-    terms = verse_word2terms(verse.content, font_cache)
-
-
     renderer = Renderer(
         english_font=load_font(OPEN_SANS, size=20),
-        fonts={},
+        font_cache={},
         height=1080, width=540, fps=60, 
     )
     max_width = int(renderer.width * 0.8)
     
+    verse_words_load_fonts(verse.content, 35, renderer.font_cache)
+
+    terms = verse_word2terms(verse.content, renderer.font_cache)
     texts = [TextRenderer(list(reversed(term))) for term in terms2lines(terms, max_width)]
 
 
