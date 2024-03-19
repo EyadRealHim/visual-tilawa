@@ -49,3 +49,8 @@ def verse_words_load_fonts(
 
     return font_cache
 
+def time_step2frame_index(time_step_ms: float, fps: int):
+    return int(time_step_ms / 1000 * fps)
+
+def frame_index2time_step(index: int, fps: int):
+    return int(index / fps * 1000)

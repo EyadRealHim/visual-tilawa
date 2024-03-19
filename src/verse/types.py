@@ -62,5 +62,10 @@ class ClipInformation(BaseModel):
     # in milliseconds
     end: int
 
+    # in milliseconds
+    @property
+    def duration(self):
+        return self.end - self.begin
+
     def filename(self):
         return f"{self.verse_key}:{self.clip_index}".replace(":", "-")

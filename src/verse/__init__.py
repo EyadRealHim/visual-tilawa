@@ -70,7 +70,7 @@ def extract_clips(verse: VerseInformation):
         words = words - collection
 
         collection = list(collection)
-        sorted(collection, key=lambda x: x.timestamps)
+        collection = sorted(collection, key=lambda x: x.timestamps)
 
         clips.append(
             ClipInformation(
@@ -90,5 +90,5 @@ if __name__ == "__main__":
     verse = verse_info(VerseKey(chapter_id=1, verse_id=1))
 
     print(
-        extract_clips(verse)
+        extract_clips(verse)[0][0].model_dump()
     )
