@@ -3,8 +3,17 @@ import numpy as np
 import cv2
 
 
-from .utilities import time_step2frame_index, verse_words_load_fonts, verse_word2terms, text2terms, terms2lines, load_font
-from ..verse import verse_info, VerseKey, ClipInformation, extract_clips
+from .utilities import (
+    time_step2frame_index,
+    verse_words_load_fonts,
+    verse_word2terms,
+    text2terms,
+    terms2lines,
+    load_font,
+)
+
+from ..verse import verse_info_by_key, VerseKey, ClipInformation, extract_clips
+
 from .types import TextRenderer, Renderer
 from .config import OPEN_SANS
 
@@ -81,7 +90,7 @@ if __name__ == "__main__":
         quran_font_size=40,
     )
 
-    clips, audio = extract_clips(verse_info(VerseKey(chapter_id=1, verse_id=1)))
+    clips, audio = extract_clips(verse_info_by_key(VerseKey(chapter_id=1, verse_id=1)))
 
     for clip in clips:
         out = renderer.video_writer(f"dist/{clip.filename()}.mp4")

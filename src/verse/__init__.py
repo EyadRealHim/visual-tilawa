@@ -7,7 +7,7 @@ from ..utilities import GET, virtual_io
 from .config import RECITER_ID, SILENCE_THRESHOLD, CODE_VERSION
 
 
-def verse_info(key: VerseKey):
+def verse_info_by_key(key: VerseKey):
     url = f"https://api.quran.com//api/v4/verses/by_key/{key}"
     url += "?" + f"language=en&words=true&audio={RECITER_ID}"
     url += "&word_fields=" + f"code_v{CODE_VERSION},v{CODE_VERSION}_page"
@@ -81,6 +81,9 @@ def extract_clips(verse: VerseInformation):
         collection = list(collection)
         collection = sorted(collection, key=lambda x: x.timestamps)
 
+        if not collection:
+            continue
+
         clips.append(
             ClipInformation(
                 verse_key=verse.verse_key,
@@ -101,6 +104,6 @@ def extract_clips(verse: VerseInformation):
 
 
 if __name__ == "__main__":
-    verse = verse_info(VerseKey(chapter_id=1, verse_id=1))
+    verse = verse_info_by_key(VerseKey(chapter_id=1, verse_id=1))
 
     print(extract_clips(verse)[0][0].model_dump())
