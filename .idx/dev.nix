@@ -25,7 +25,8 @@
     };
 
     extensions = [
-      "ms-python.python"
+      "charliermarsh.ruff"
+      # "ms-python.python"
       # "vscodevim.vim"
     ];
 

@@ -31,17 +31,20 @@ def terms2lines(terms: List[Term], max_width: int):
     if temp:
         yield temp
 
+
 def text2terms(text: str, font: FreeTypeFont):
     terms = [[Term(w, font), Term(" ", font)] for w in text.split(" ")]
     terms = sum(terms, [])
 
     return terms
 
+
 def verse_word2terms(verse_words: List[VerseWord], font_cache: FontCache):
-    return[Term(vw.content, font_cache[vw.font_url]) for vw in verse_words]
+    return [Term(vw.content, font_cache[vw.font_url]) for vw in verse_words]
+
 
 def verse_words_load_fonts(
-   verse_words: List[VerseWord], font_size: int, font_cache: FontCache = {}
+    verse_words: List[VerseWord], font_size: int, font_cache: FontCache = {}
 ):
     for w in verse_words:
         f = w.font_url
@@ -49,8 +52,10 @@ def verse_words_load_fonts(
 
     return font_cache
 
+
 def time_step2frame_index(time_step_ms: float, fps: int):
     return int(time_step_ms / 1000 * fps)
+
 
 def frame_index2time_step(index: int, fps: int):
     return int(index / fps * 1000)

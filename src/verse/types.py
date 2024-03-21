@@ -13,6 +13,7 @@ class VerseKey(BaseModel):
     def __str__(self) -> str:
         return f"{self.chapter_id}:{self.verse_id}"
 
+
 class VerseWord(BaseModel):
     spell_audio_path: str
     translation: str
@@ -40,6 +41,7 @@ class VerseWord(BaseModel):
     def __hash__(self) -> int:
         return hash(self.content) + hash(self.translation) + self.timestamps
 
+
 class VerseInformation(BaseModel):
     audio_path: str
     verse_key: VerseKey
@@ -49,7 +51,8 @@ class VerseInformation(BaseModel):
     @property
     def audio_url(self) -> str:
         return path2url(self.audio_path, "https://verses.quran.com/")
-    
+
+
 class ClipInformation(BaseModel):
     verse_key: VerseKey
     clip_index: int
