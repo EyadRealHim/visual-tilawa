@@ -17,6 +17,6 @@ def virtual_io(url: str, **kwargs):
 
 def merge_audio_and_video(out_filename: str, audio_filename: str, video_filename: str):
     os.system(
-        "ffmpeg -i %s -i %s -c:v libx264 -c:a aac -y -loglevel quiet %s"
+        "ffmpeg -i %s -i %s -c:v libx264 -c:a aac -y -loglevel error %s"
         % (audio_filename, video_filename, out_filename)
     )

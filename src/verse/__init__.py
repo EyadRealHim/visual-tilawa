@@ -64,8 +64,12 @@ def extract_clips(verse: VerseInformation):
     silence_periods = [
         (prev, curr) for prev, curr in zip([0] + silence_periods, silence_periods)
     ]
+
+    duration_ms = round(audio.duration_seconds * 1000)
     if not silence_periods:
-        silence_periods = [(0, round(audio.duration_seconds * 1000))]
+        silence_periods = [(0, duration_ms)]
+    if abs(silence_periods[-1][1] - duration_ms) > 100:
+        silence_periods.append((silence_periods[-1][1], duration_ms))
 
     clips: List[ClipInformation] = []
     words = set(verse.content)

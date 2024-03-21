@@ -1,3 +1,6 @@
+from typing import List
+import os
+
 import click
 from tqdm import tqdm
 
@@ -40,24 +43,33 @@ class VerseKeyParam(click.ParamType):
     name = "VerseKey"
 
     def convert(self, value: str, _a, _b):
-        if isinstance(value, tuple) or isinstance(value, VerseKey):
+        if (
+            isinstance(value, tuple)
+            or isinstance(value, VerseKey)
+            or isinstance(value, list)
+        ):
             return value
 
-        chapter_id, verse_id = 0, 0
+        results = []
 
         try:
-            chapter_id, verse_id = map(int, value.split(":"))
+            for part in value.split(","):
+                chapter_id, verse_id = map(int, part.split(":"))
+                if chapter_id <= 0 or verse_id <= 0:
+                    raise click.BadArgumentUsage(
+                        "chapter_id and verse_id must be positive integers."
+                    )
+
+                results.append((VerseKey(chapter_id=chapter_id, verse_id=verse_id)))
         except ValueError:
             raise click.BadParameter(
                 "verse key must be specified in the format 'chapter_id:verse_id'."
             )
 
-        if chapter_id <= 0 or verse_id <= 0:
-            raise click.BadArgumentUsage(
-                "chapter_id and verse_id must be positive integers."
-            )
+        if not results:
+            raise click.BadArgumentUsage("no verse keys found")
 
-        return VerseKey(chapter_id=chapter_id, verse_id=verse_id)
+        return results
 
 
 def verbose_echo(print: bool, msg):
@@ -79,7 +91,7 @@ def verbose_echo(print: bool, msg):
     default="dist",
     help="where to store the videos",
     prompt="Enter the output directory",
-    type=str,
+    type=click.Path(exists=True),
 )
 @click.option(
     "--fps",
@@ -104,7 +116,7 @@ def verbose_echo(print: bool, msg):
 )
 def App(
     ctx: click.Context,
-    verse_key: VerseKey,
+    verse_key: List[VerseKey],
     dist: str,
     fps: int,
     resolution: VideoResolution,
@@ -115,7 +127,7 @@ def App(
 
     click.echo("")
     click.echo(f"{line_text}Summary{line_text}")
-    click.echo(f"key: {verse_key}\tdist: {dist}")
+    click.echo(f"key: {'|'.join([str(v) for v in verse_key])}\tdist: {dist}")
     click.echo(f"resolution: {resolution}\tfps: {fps}")
     click.echo("")
 
@@ -130,20 +142,34 @@ def App(
         fps=fps,
     )
 
-    verbose_echo(verbose, f"loading verse[{verse_key}] information...")
-    verse_info = verse_info_by_key(key=verse_key)
-    verbose_echo(verbose, "extracting clips...")
-    clips, audio = extract_clips(verse_info)
-
     TEMP_FILENAME = f"{dist}/TEMP-DO-NOT-TOUCH"
-    out = renderer.video_writer(f"{TEMP_FILENAME}.mp4")
-    audio.export(f"{TEMP_FILENAME}.mp3")
+    videos: List[str] = []
 
-    for clip in tqdm(clips, "rendering"):
-        for frame in clip2frames(renderer, clip):
-            out.write(frame)
+    for key in verse_key:
+        filename = f"{dist}/{key.chapter_id}-{key.verse_id}.mp4"
 
-    out.release()
+        verbose_echo(verbose, f"loading verse[{key}] information...")
+        verse_info = verse_info_by_key(key=key)
+        verbose_echo(verbose, "extracting clips...")
+        clips, audio = extract_clips(verse_info)
+
+        if not clips:
+            raise ValueError(f"no clips found for verse {key}")
+
+        out = renderer.video_writer(f"{TEMP_FILENAME}.mp4")
+
+        for clip in tqdm(clips, "rendering"):
+            for frame in clip2frames(renderer, clip):
+                out.write(frame)
+
+        verbose_echo(verbose, "saving...")
+        audio.export(f"{TEMP_FILENAME}.mp3")
+        out.release()
+
+        merge_audio_and_video(filename, f"{TEMP_FILENAME}.mp3", f"{TEMP_FILENAME}.mp4")
+        videos.append(filename)
+
+        click.echo("\n")
 
     output_filename = click.prompt(
         "Enter output video path",
@@ -151,9 +177,11 @@ def App(
         type=click.Path(exists=False),
     )
 
-    merge_audio_and_video(
-        output_filename, f"{TEMP_FILENAME}.mp3", f"{TEMP_FILENAME}.mp4"
-    )
+    fname = "temp-vagerwdlt.txt"
+    with open(fname, "w") as f:
+        f.writelines([f"file '{f}'\n" for f in videos])
+    os.system(f"ffmpeg -f concat -i {fname} -c copy -loglevel error {output_filename}")
+    os.remove(fname)
 
 
 if __name__ == "__main__":
