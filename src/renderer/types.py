@@ -37,10 +37,16 @@ class Renderer(BaseModel):
 
     fps: int
 
+    quran_font_size: int = 35
+
     # FreeTypeFont
     translation_font: Any
     # font_url, FreeTypeFont
-    font_cache: Dict[str, Any]
+    font_cache: Dict[str, Any] = dict()
+
+    @property
+    def translation_font_size(self) -> int:
+        return self.translation_font.size
 
     @property
     def frame_size(self):
