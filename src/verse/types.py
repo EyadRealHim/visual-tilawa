@@ -1,9 +1,24 @@
-from typing import List
+from typing import List, Union, Literal, get_args
 
 from pydantic import BaseModel
 
-from .utilities import path2url
 from .config import CODE_VERSION
+
+
+# helpers
+def path2url(path, url):
+    return f"{url}/{path}" if not str(path).startswith("//") else f"https:{path}"
+
+
+ReciterName = Union[Literal["Sa'ud ash-Shuraim"], Literal["Mahmoud Khalil Al-Husary"]]
+RECITER_NAMES = [get_args(a)[0] for a in get_args(ReciterName)]
+
+
+class Reciter(BaseModel):
+    silence_threshold: float
+    id: int
+
+    name: ReciterName
 
 
 class VerseKey(BaseModel):
@@ -43,6 +58,7 @@ class VerseWord(BaseModel):
 
 
 class VerseInformation(BaseModel):
+    reciter: Reciter
     audio_path: str
     verse_key: VerseKey
 
@@ -54,6 +70,7 @@ class VerseInformation(BaseModel):
 
 
 class ClipInformation(BaseModel):
+    reciter: Reciter
     verse_key: VerseKey
     clip_index: int
 

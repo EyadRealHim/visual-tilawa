@@ -2,14 +2,15 @@ from typing import List, Set
 
 from pydub import AudioSegment, silence
 
-from .types import VerseInformation, ClipInformation, VerseWord, VerseKey
+from .types import VerseInformation, ClipInformation, VerseWord, VerseKey, Reciter
+from .utilities import get_reciter_config
 from ..utilities import GET, virtual_io
-from .config import RECITER_ID, SILENCE_THRESHOLD, CODE_VERSION
+from .config import CODE_VERSION
 
 
-def verse_info_by_key(key: VerseKey):
+def verse_info_by_key(key: VerseKey, reciter: Reciter):
     url = f"https://api.quran.com//api/v4/verses/by_key/{key}"
-    url += "?" + f"language=en&words=true&audio={RECITER_ID}"
+    url += "?" + f"language=en&words=true&audio={reciter.id}"
     url += "&word_fields=" + f"code_v{CODE_VERSION},v{CODE_VERSION}_page"
 
     raw = GET(url=url).json()
@@ -48,7 +49,7 @@ def verse_info_by_key(key: VerseKey):
         )
 
     return VerseInformation(
-        audio_path=audio_data["url"], verse_key=key, content=content
+        audio_path=audio_data["url"], verse_key=key, content=content, reciter=reciter
     )
 
 
@@ -57,7 +58,7 @@ def extract_clips(verse: VerseInformation):
     silence_periods = silence.detect_silence(
         audio_segment=audio,
         min_silence_len=350,
-        silence_thresh=audio.dBFS - SILENCE_THRESHOLD,
+        silence_thresh=audio.dBFS - verse.reciter.silence_threshold,
     )
 
     silence_periods = [(a + b) // 2 for a, b in silence_periods]
@@ -90,6 +91,7 @@ def extract_clips(verse: VerseInformation):
 
         clips.append(
             ClipInformation(
+                reciter=verse.reciter,
                 verse_key=verse.verse_key,
                 clip_index=index,
                 content=collection,
@@ -108,6 +110,9 @@ def extract_clips(verse: VerseInformation):
 
 
 if __name__ == "__main__":
-    verse = verse_info_by_key(VerseKey(chapter_id=1, verse_id=1))
+    verse = verse_info_by_key(
+        VerseKey(chapter_id=1, verse_id=1),
+        get_reciter_config("Mahmoud Khalil Al-Husary"),
+    )
 
     print(extract_clips(verse)[0][0].model_dump())

@@ -5,7 +5,7 @@ import click
 from tqdm import tqdm
 
 from .renderer import Renderer, load_font, OPEN_SANS, clip2frames
-from .verse import verse_info_by_key, extract_clips
+from .verse import verse_info_by_key, extract_clips, get_reciter_config
 from .verse.types import VerseKey
 from .utilities import merge_audio_and_video
 
@@ -39,6 +39,15 @@ class SizeParam(click.ParamType):
         return VideoResolution(width=width, height=height)
 
 
+class VerseKeyRange:
+    def __init__(self, start: VerseKey, end: VerseKey):
+        self.start = start
+        self.end = end
+
+    def __str__(self) -> str:
+        return f"{self.start}..{self.end}"
+
+
 class VerseKeyParam(click.ParamType):
     name = "VerseKey"
 
@@ -54,13 +63,32 @@ class VerseKeyParam(click.ParamType):
 
         try:
             for part in value.split(","):
-                chapter_id, verse_id = map(int, part.split(":"))
-                if chapter_id <= 0 or verse_id <= 0:
-                    raise click.BadArgumentUsage(
-                        "chapter_id and verse_id must be positive integers."
-                    )
+                ranges = part.split("..")
 
-                results.append((VerseKey(chapter_id=chapter_id, verse_id=verse_id)))
+                out = []
+                for part in ranges:
+                    chapter_id, verse_id = map(int, part.split(":"))
+                    k = VerseKey(chapter_id=chapter_id, verse_id=verse_id)
+                    if k.chapter_id <= 0 or k.verse_id <= 0:
+                        raise click.BadArgumentUsage(
+                            f"chapter_id and verse_id must be positive integers. '{k}'"
+                        )
+                    out.append(k)
+
+                if len(out) == 1:
+                    results.extend(out)
+                elif len(out) == 2:
+                    r = VerseKeyRange(start=out[0], end=out[1])
+
+                    if r.start.chapter_id != r.end.chapter_id:
+                        raise click.BadArgumentUsage(f"chapter_id mismatch '{r}'")
+                    if r.start.verse_id >= r.end.verse_id:
+                        raise click.BadArgumentUsage(
+                            f"range must be in ascending order: '{r}'"
+                        )
+                    results.append(r)
+                else:
+                    raise click.BadArgumentUsage(f"Invalid range format. '{part}'")
         except ValueError:
             raise click.BadParameter(
                 "verse key must be specified in the format 'chapter_id:verse_id'."
@@ -120,7 +148,7 @@ def App(
     dist: str,
     fps: int,
     resolution: VideoResolution,
-    verbose: bool,
+    verbose: bool
 ):
     """generate clips by verse"""
     line_text = "-" * 10
@@ -135,6 +163,7 @@ def App(
         return
 
     click.echo("Generating...")
+    reciter = get_reciter_config("Mahmoud Khalil Al-Husary")
     renderer = Renderer(
         height=resolution.height,
         width=resolution.width,
@@ -145,11 +174,30 @@ def App(
     TEMP_FILENAME = f"{dist}/TEMP-DO-NOT-TOUCH"
     videos: List[str] = []
 
-    for key in verse_key:
+    generation_keys = []
+    for k in verse_key:
+        if isinstance(k, VerseKeyRange):
+            for i in range(k.start.verse_id, k.end.verse_id + 1):
+                generation_keys.append(
+                    VerseKey(chapter_id=k.start.chapter_id, verse_id=i)
+                )
+        else:
+            generation_keys.append(k)
+
+    for key in generation_keys:
         filename = f"{dist}/{key.chapter_id}-{key.verse_id}.mp4"
 
         verbose_echo(verbose, f"loading verse[{key}] information...")
-        verse_info = verse_info_by_key(key=key)
+        verse_info = None
+        try:
+            verse_info = verse_info_by_key(key=key, reciter=reciter)
+        except Exception:
+            click.echo(f"[ERROR] key '{key}' not found")
+            if click.confirm(f"ignore '{key}' and continue?", default=False):
+                continue
+            else:
+                click.echo("exiting...")
+                return
         verbose_echo(verbose, "extracting clips...")
         clips, audio = extract_clips(verse_info)
 
@@ -180,7 +228,9 @@ def App(
     fname = "temp-vagerwdlt.txt"
     with open(fname, "w") as f:
         f.writelines([f"file '{f}'\n" for f in videos])
-    os.system(f"ffmpeg -f concat -i {fname} -c copy -loglevel error {output_filename}")
+    os.system(
+        f"ffmpeg -f concat -i {fname} -c copy -loglevel error -y {output_filename}"
+    )
     os.remove(fname)
 
 
