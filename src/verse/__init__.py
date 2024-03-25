@@ -2,15 +2,24 @@ from typing import List, Set
 
 from pydub import AudioSegment, silence
 
-from .types import VerseInformation, ClipInformation, VerseWord, VerseKey, Reciter
+from .types import (
+    VerseInformation,
+    ClipInformation,
+    VerseWord,
+    VerseKey,
+    Reciter,
+    TranslationLanguage,
+)
 from .utilities import get_reciter_config
 from ..utilities import GET, virtual_io
 from .config import CODE_VERSION
 
 
-def verse_info_by_key(key: VerseKey, reciter: Reciter):
+def verse_info_by_key(
+    key: VerseKey, reciter: Reciter, lang: TranslationLanguage = "en"
+):
     url = f"https://api.quran.com//api/v4/verses/by_key/{key}"
-    url += "?" + f"language=en&words=true&audio={reciter.id}"
+    url += "?" + f"language={lang}&words=true&audio={reciter.id}"
     url += "&word_fields=" + f"code_v{CODE_VERSION},v{CODE_VERSION}_page"
 
     raw = GET(url=url).json()

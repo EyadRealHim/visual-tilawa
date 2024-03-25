@@ -13,6 +13,19 @@ def path2url(path, url):
 ReciterName = Union[Literal["Sa'ud ash-Shuraim"], Literal["Mahmoud Khalil Al-Husary"]]
 RECITER_NAMES = [get_args(a)[0] for a in get_args(ReciterName)]
 
+TranslationLanguage = Union[
+    Literal["ur"],
+    Literal["en"],
+    Literal["id"],
+    Literal["bn"],
+    Literal["tr"],
+    Literal["fa"],
+    Literal["ru"],
+    Literal["hi"],
+    Literal["de"],
+    Literal["inh"],
+]
+
 
 class Reciter(BaseModel):
     silence_threshold: float
