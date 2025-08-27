@@ -171,7 +171,7 @@ def App(
 
 
     click.echo("Generating...")
-    reciter = get_reciter_config("Mahmoud Khalil Al-Husary")
+    reciter = get_reciter_config("Sa'ud ash-Shuraim")
     renderer = Renderer(
         height=resolution.height,
         width=resolution.width,
@@ -244,3 +244,4 @@ def App(
 
 if __name__ == "__main__":
     App()
+
