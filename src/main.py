@@ -142,13 +142,20 @@ def verbose_echo(print: bool, msg):
     is_flag=True,
     help="verbose output",
 )
+@click.option(
+    "-y", "--yes",
+    is_flag=True,
+    default=False,
+    help="Automatically confirm and proceed without prompting."
+)
 def App(
     ctx: click.Context,
     verse_key: List[VerseKey],
     dist: str,
     fps: int,
     resolution: VideoResolution,
-    verbose: bool
+    verbose: bool,
+    yes: bool
 ):
     """generate clips by verse"""
     line_text = "-" * 10
@@ -159,8 +166,9 @@ def App(
     click.echo(f"resolution: {resolution}\tfps: {fps}")
     click.echo("")
 
-    if not click.confirm("Do you want to proceed?", default=True):
+    if not yes and not click.confirm("Do you want to proceed?", default=True):
         return
+
 
     click.echo("Generating...")
     reciter = get_reciter_config("Mahmoud Khalil Al-Husary")
