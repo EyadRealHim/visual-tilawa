@@ -136,6 +136,12 @@ def verbose_echo(print: bool, msg):
     type=SizeParam(),
 )
 @click.option(
+    "--reciter",
+    type=click.Choice(list(_RECITERS.keys()), case_sensitive=False),
+    prompt="Choose a reciter",
+    help="Select a reciter by name",
+)
+@click.option(
     "-v/-q",
     "--verbose/--quiet",
     default=True,
@@ -154,8 +160,9 @@ def App(
     dist: str,
     fps: int,
     resolution: VideoResolution,
+    reciter: str,   # <-- single reciter
     verbose: bool,
-    yes: bool
+    yes: bool,
 ):
     """generate clips by verse"""
     line_text = "-" * 10
@@ -164,20 +171,22 @@ def App(
     click.echo(f"{line_text}Summary{line_text}")
     click.echo(f"key: {'|'.join([str(v) for v in verse_key])}\tdist: {dist}")
     click.echo(f"resolution: {resolution}\tfps: {fps}")
+    click.echo(f"reciter: {reciter}")
     click.echo("")
 
     if not yes and not click.confirm("Do you want to proceed?", default=True):
         return
 
+    # ✅ only one reciter config now
+    reciter_cfg = get_reciter_config(reciter)
 
-    click.echo("Generating...")
-    reciter = get_reciter_config("Sa'ud ash-Shuraim")
     renderer = Renderer(
         height=resolution.height,
         width=resolution.width,
         translation_font=load_font(OPEN_SANS, size=20),
         fps=fps,
     )
+
 
     TEMP_FILENAME = f"{dist}/TEMP-DO-NOT-TOUCH"
     videos: List[str] = []
@@ -244,4 +253,5 @@ def App(
 
 if __name__ == "__main__":
     App()
+
 
